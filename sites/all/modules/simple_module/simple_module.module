@@ -1,0 +1,281 @@
+<?php
+
+/**
+ * @param $path
+ * @param $arg
+ * @return string|null
+ * help item in modules menu
+ */
+function simple_module_help($path, $arg)
+{
+  switch ($path) {
+    case "admin/help#simple_module":
+      return t("Allows to set pair of id/string and display on a page.");
+      break;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function simple_module_menu()
+{
+  $items = array();
+
+  $items['admin/simple_module'] = array(
+    'title' => 'Simple module',
+    'description' => 'simple module item for admin menu',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('simple_module_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+    $items['simple_module_page'] = array(
+      'title' => 'Simple module page',
+      'page callback' => 'simple_module_page',
+      'access arguments' => array('access administration pages'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+  return $items;
+}
+
+/**
+ * @param $items
+ * directs simple module page to be created in main menu
+ */
+function simple_module_menu_alter(&$items)
+{
+  $items['simple_module_page']['menu_name'] = 'main-menu';
+}
+
+
+/**
+ * @param $form
+ * @param $form_state
+ * @return mixed
+ * FORM
+ */
+function simple_module_form($form, &$form_state)
+{
+  $form['form_field'] = array(
+    '#type' => 'container',
+    '#tree' => TRUE,
+    '#prefix' => "<div id='records_div'>",
+    '#suffix' => "</div>"
+  );
+
+  $saved = variable_get('saved');
+
+  if (!isset($form_state['field_deltas'])) {
+    $form_state['field_deltas'] = range(0, 0);
+    if (isset($saved)) {
+      $form_state['field_deltas'] = $saved['deltas_amount'];
+    }
+  }
+
+
+  $field_count = $form_state['field_deltas'];
+
+  foreach ($field_count as $delta) {
+    $default_string = null;
+    $default_id = null;
+    if ($delta == $saved['deltas_amount'][$delta]) {
+      $default_id = $saved['data']['record: ' . $delta]['string_id']['#value'];
+      $default_string = $saved['data']['record: ' . $delta]['string']['#value'];
+    }
+
+    $form['form_field']['record: ' . $delta] = array(
+      '#type' => 'container',
+      '#title' => t('record: '.$delta),
+      '#tree' => TRUE,
+    );
+
+    $form['form_field']['record: ' . $delta]['string_id'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Id'),
+      '#size' => 6,
+      '#tree' => TRUE,
+      '#default_value' => $default_id,
+
+      /*'#required' => TRUE,*/
+
+    );
+    $form['form_field']['record: ' . $delta]['string'] = array(
+      '#type' => 'textfield',
+      '#title' => t('String value'),
+      '#default_value' => $default_string,
+      '#tree' => TRUE,
+      '#description' => 'form #' . $delta,
+      /*'#required' => TRUE,*/
+      '#size' => 25,
+
+    );
+    $form['form_field']['record: ' . $delta]['delete_button'] = array(
+      '#type' => 'submit',
+      '#tree' => TRUE,
+      '#title'=>$delta,
+      '#name'=>$delta,
+      '#title_display'=>'invisible',
+      '#value' => t('Delete'),
+      '#submit' => array('simple_module_records_delete'),
+      '#ajax' => array(
+        'callback' => 'simple_module_records_delete_callback',
+        'wrapper' => 'records_div'),
+    );
+  }
+
+
+  $form['save_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#submit' => array('simple_module_records_save'),
+    '#ajax' => array(
+      'callback' => 'simple_module_records_add_callback',
+      'wrapper' => 'records_div'),
+  );
+
+
+  $form['add_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add New'),
+    '#submit' => array('simple_module_records_add'),
+    '#ajax' => array(
+      'callback' => 'simple_module_records_add_callback',
+      'wrapper' => 'records_div'),
+  );
+
+  $form['remove_all_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Remove All'),
+    '#submit' => array('simple_module_remove_all'),
+    /*'#ajax' => array(
+      'callback' => 'simple_module_records_saved_callback',
+      'wrapper' => 'records_div'),*/
+  );
+
+  return $form;
+
+}
+
+
+/**
+ * @param $form
+ * @param $form_state
+ * @return mixed
+ * CALLBACKS
+ */
+
+function simple_module_records_add_callback($form, &$form_state)
+{
+  return $form['form_field'];
+}
+
+function simple_module_records_delete_callback($form, &$form_state)
+{
+  return $form['form_field'];
+}
+
+function simple_module_records_add($form, &$form_state)
+{
+  $form_state['field_deltas'][] = count($form_state['field_deltas']) > 0 ? max($form_state['field_deltas']) + 1 : 0;
+  $form_state['rebuild'] = TRUE;
+  drupal_get_messages();
+}
+
+function simple_module_records_save($form, &$form_state)
+{
+  $deltas_amount = isset($form_state['field_deltas']) >= 0 ? $form_state['field_deltas'] : 0;
+  $data = $form_state['complete form']['form_field'];
+  foreach ($data as $complete_form => $value) {
+    if (strstr($complete_form, 'record: ')) {
+      $saved_forms[$complete_form] = $value;
+    }
+  }
+
+  $old_saved = variable_get('saved');
+  $old_saved_data = $old_saved ? $old_saved['data'] : null;
+  $saved_forms = $old_saved_data ? array_merge($saved_forms, $old_saved_data) : $saved_forms;
+  $saved['data'] = $saved_forms ? $saved_forms : null;
+  $saved['deltas_amount'] = $deltas_amount;
+
+  variable_set('saved', $saved);
+}
+
+function simple_module_records_delete($form, &$form_state)
+{
+
+  $simple_module_triggered_del_button=$form_state['triggering_element']['#title'];
+  $k = array_search($simple_module_triggered_del_button, $form_state['field_deltas']);
+  unset($form_state['field_deltas'][$k]);
+  $simple_module_saved_records = variable_get('saved');
+  if (isset($simple_module_saved_records))
+  {
+    unset($simple_module_saved_records['data']['record: '.$k]);
+    unset($simple_module_saved_records['deltas_amount'][$k]);
+  }
+  $form_state['rebuild'] = TRUE;
+  variable_set('saved', $simple_module_saved_records);
+  drupal_get_messages();
+}
+
+function simple_module_remove_all()
+{
+  variable_del('saved');
+}
+
+
+/**
+ * @param $form
+ * @param $form_state
+ * validation for empty fields
+ */
+/*function simple_module_form_validate($form, &$form_state)
+{
+  $string_id = $form_state['values']['string_id'];
+  $string = $form_state['values']['string'];
+  if ($string_id == null) {
+    form_set_error('string_id', t('Пустые значения id недопустимы!'));
+  }
+  if ( $string == null) {
+    form_set_error('string', t('Пустые значения строки недопустимы!'));
+  }
+}*/
+
+
+
+function simple_module_page()
+{
+  $simple_module_result=variable_get('saved');
+  $simple_module_page_items=array();
+  if (isset( $simple_module_result)){
+  foreach ($simple_module_result['data'] as $node) {
+    $simple_module_page_items[]=array(
+      /*'simple_module_page_data'=>l($node['#title'],'node/'.$node['string_id']['#value']),*/
+      'simple_module_page_data'=>array(
+        $node['string_id']['#value'],
+
+      ),
+      'data'=>'id: '.$node['string_id']['#value'].' string: '.$node['string']['#value'],
+
+    );
+  }}
+  if (empty($simple_module_page_items)) {
+    $simple_module_page_array['simple_module_form_arguments'] = array(
+      //Title serves as page subtitle
+      '#title' => t('All records'),
+      '#markup' => t('No records available.'),
+    );
+    return $simple_module_page_array;
+  }
+  else {
+    $simple_module_page_array['simple_module_form_arguments']= array(
+      '#title' => t('All records'),
+      '#items' => $simple_module_page_items,
+      '#markup' => t('No records available.'),
+      //Theme hook with suggestion.
+
+      '#theme' => 'item_list__simple_module',
+    );
+    return $simple_module_page_array;
+  }
+}

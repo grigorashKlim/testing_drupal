@@ -1,0 +1,6 @@
+name = Simple Module
+description = Shows pair of id/string depends on requested id in URL
+core = 7.x
+; NEW LINE
+configure = admin/simple_module
+
