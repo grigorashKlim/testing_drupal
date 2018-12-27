@@ -2,6 +2,7 @@
 /**
  * @param $path
  * @param $arg
+ *
  * @return string|null
  * help? item in modules menu
  */
@@ -32,6 +33,12 @@ function simple_module_menu() {
     'access arguments' => ['access administration pages'],
     'type' => MENU_NORMAL_ITEM,
   ];
+  $items['simple_module_theme_callback/%simple_module_theme_callback'] = [
+    'page callback' => 'simple_module_theme_callback',
+    'page arguments' => [
+      1,
+    ],
+  ];
   return $items;
 }
 
@@ -46,6 +53,7 @@ function simple_module_menu_alter(&$items) {
 /**
  * @param $form
  * @param $form_state
+ *
  * @return mixed
  * form items creation section
  */
@@ -217,8 +225,158 @@ function simple_module_theme($existing, $type, $theme, $path) {
 }
 
 // In the callback function
-function simple_module_theme_callback() {
+function simple_module_theme_callback($record_id = NULL) {
   $simple_module_form_array = variable_get('simple_module_saved_records');
+  if (isset($record_id)) {
+    foreach ($simple_module_form_array as $key => $value) {
+      if ($value['string_id'] != $record_id) {
+        unset($simple_module_form_array[$key]);
+
+      }
+    }
+  }
   $output = theme('simple_module_template', ['simple_module_form_array' => $simple_module_form_array]);
   return $output;
 }
+
+
+/**
+ * custom field creation section
+ *
+ *
+ *
+ *
+ *
+ *
+ */
+/**
+ * @return array
+ * field info
+ */
+function simple_module_field_info() {
+
+  return [
+    // We name our field as the associative name of the array.
+    'simple_module_field' => [
+      'label' => t('Illustration field'),
+      'description' => t('Demonstrates a field to contain picture with description and link.'),
+      'default_widget' => 'simple_module_widget',
+      'default_formatter' => 'simple_module_formatter',
+    ],
+  ];
+}
+
+/**
+ * widget info
+ */
+function simple_module_field_widget_info() {
+
+  return [
+    'simple_module_widget' => [
+      'label' => t('Simple widget'),
+      'field types' => ['simple_module_field'],
+    ],
+  ];
+}
+
+function simple_module_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  /*$item =& $items[$delta];*/
+  $element['fid']=array(
+    '#type' => 'managed_file',
+    '#name' => 'simple_picture_name',
+    '#title' => t('Chose simple picture'),
+    '#upload_location' => 'public://images/',
+
+  );
+
+  $element['description']=array(
+    '#type' => 'textfield',
+    '#title' => t('Picture description'),
+    '#default_value' => isset($item['description']) ? $item['description'] : '',
+
+  );
+  $element['link']=array(
+    '#type' => 'textfield',
+    '#title' => t('Link address'),
+    '#default_value' => isset($item['link']) ? $item['link'] : '',
+  );
+
+/*$element['simple_module_field']=$widget;*/
+  return $element;
+}
+
+function simple_module_field_formatter_info() {
+  // Returning array.
+   
+  return [
+    // Name of our format for code.
+    'simple_module_field_formatter' => [
+      // Displayed name of format.
+      'label' => t('Simple field formatter'),
+      // Field in DB with which our format will work.
+      'field types' => array('simple_module_field'),
+    ],
+  ];
+}
+
+function simple_module_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = [];
+
+
+  foreach ($items as $delta => $item) {
+    $file = file_load($item['fid']);
+    $uri = $file->uri;
+    $url = file_create_url($uri);
+    $item['uri']=$uri;
+    $a='breakpoint';
+    $path = array(
+      'path' => $item['link'],
+      'options' => array(),
+    );
+    $item['title']=$item['description'];
+    $item['width']=319;
+    $item['height']=517;
+    $element[$delta] = array(
+      /*'#markup' => 'url: '.$url.' description :'.$item['description'].' link :'.$item['link'],*/
+      '#theme' => 'image_formatter',
+      '#item' => $item,
+      '#path' => $path,
+      /*'#width' => 319,
+      '#height' => 517,*/
+      /*'#description' => $item['description'],*/
+    );
+  }
+
+
+  return $element;
+}
+
+
+function theme_image_formatter2($url)
+{
+  $file = file_load($item['fid']);
+  $uri = $file->uri;
+  $url = file_create_url($uri);
+  $image = array(
+    'path' => $url,
+  );
+  $output = theme('image', $image);
+  return $output;
+}
+
+function simple_module_field_is_empty($item, $field) {
+  if ($field['type'] == 'simple_module_field') {
+    if ( empty($item) ) {
+
+      $a='breakpoint';
+      return (TRUE);
+    }
+  }
+  $a='breakpoint';
+  return (FALSE);
+}
+
+
+
+
+
