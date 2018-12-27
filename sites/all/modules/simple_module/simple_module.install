@@ -1,0 +1,23 @@
+<?php
+function simple_module_field_schema($field) {
+  if ($field['type'] == 'simple_module_field') {
+    return array(
+        'columns' => array(
+          'fid' => array(
+            'type' => 'int',
+            'not null' => FALSE,
+          ),
+          'description' => array(
+            'type' => 'varchar',
+            'length' => 255,
+            'not null' => FALSE,
+          ),
+          'link' => array(
+            'type' => 'varchar',
+            'length' => 255,
+            'not null' => FALSE,
+          ),
+        ),
+      );
+}
+}
