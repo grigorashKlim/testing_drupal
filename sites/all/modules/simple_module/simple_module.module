@@ -280,41 +280,41 @@ function simple_module_field_widget_info() {
 }
 
 function simple_module_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-  /*$item =& $items[$delta];*/
-  $element['fid']=array(
+  $item =& $items[$delta];
+  $element['fid'] = [
     '#type' => 'managed_file',
     '#name' => 'simple_picture_name',
     '#title' => t('Chose simple picture'),
     '#upload_location' => 'public://images/',
+    '#default_value' => isset($items[$delta]['fid']) ? $items[$delta]['fid'] : '',
 
-  );
+  ];
 
-  $element['description']=array(
+  $element['description'] = [
     '#type' => 'textfield',
     '#title' => t('Picture description'),
     '#default_value' => isset($item['description']) ? $item['description'] : '',
 
-  );
-  $element['link']=array(
+  ];
+  $element['link'] = [
     '#type' => 'textfield',
     '#title' => t('Link address'),
     '#default_value' => isset($item['link']) ? $item['link'] : '',
-  );
+  ];
 
-/*$element['simple_module_field']=$widget;*/
   return $element;
 }
 
 function simple_module_field_formatter_info() {
   // Returning array.
-   
+
   return [
     // Name of our format for code.
     'simple_module_field_formatter' => [
       // Displayed name of format.
       'label' => t('Simple field formatter'),
       // Field in DB with which our format will work.
-      'field types' => array('simple_module_field'),
+      'field types' => ['simple_module_field'],
     ],
   ];
 }
@@ -324,35 +324,32 @@ function simple_module_field_formatter_view($entity_type, $entity, $field, $inst
 
 
   foreach ($items as $delta => $item) {
+
     $file = file_load($item['fid']);
+    if (!$file) {
+      return FALSE;
+    }
     $uri = $file->uri;
     $url = file_create_url($uri);
-    $item['uri']=$uri;
-    $a='breakpoint';
-    $path = array(
+    $item['uri'] = $uri;
+    $path = [
       'path' => $item['link'],
-      'options' => array(),
-    );
-    $item['title']=$item['description'];
-    $item['width']=319;
-    $item['height']=517;
-    $element[$delta] = array(
-      /*'#markup' => 'url: '.$url.' description :'.$item['description'].' link :'.$item['link'],*/
+      'options' => [],
+    ];
+    $item['title'] = $item['description'];
+    $item['width'] = 319;
+    $item['height'] = 517;
+    $element[$delta] = [
       '#theme' => 'image_formatter',
       '#item' => $item,
       '#path' => $path,
-      /*'#width' => 319,
-      '#height' => 517,*/
-      /*'#description' => $item['description'],*/
-    );
+    ];
   }
-
-
   return $element;
 }
 
 
-function theme_image_formatter2($url)
+/*function theme_image_formatter2($url)
 {
   $file = file_load($item['fid']);
   $uri = $file->uri;
@@ -362,17 +359,14 @@ function theme_image_formatter2($url)
   );
   $output = theme('image', $image);
   return $output;
-}
+}*/
 
 function simple_module_field_is_empty($item, $field) {
   if ($field['type'] == 'simple_module_field') {
-    if ( empty($item) ) {
-
-      $a='breakpoint';
+    if (empty($item)) {
       return (TRUE);
     }
   }
-  $a='breakpoint';
   return (FALSE);
 }
 
