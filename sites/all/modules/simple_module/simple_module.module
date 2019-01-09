@@ -348,19 +348,6 @@ function simple_module_field_formatter_view($entity_type, $entity, $field, $inst
   return $element;
 }
 
-
-/*function theme_image_formatter2($url)
-{
-  $file = file_load($item['fid']);
-  $uri = $file->uri;
-  $url = file_create_url($uri);
-  $image = array(
-    'path' => $url,
-  );
-  $output = theme('image', $image);
-  return $output;
-}*/
-
 function simple_module_field_is_empty($item, $field) {
   if ($field['type'] == 'simple_module_field') {
     if (empty($item)) {
